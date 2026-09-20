@@ -4,8 +4,6 @@ Review of the existing Task Dashboard and Activity Feed modules, before the refa
 
 ## Modified Files
 
-### Maintability
-
 **`app/activity/page.tsx`** — full rewrite of the same page, same functionality, much simpler:
 
 - **`Performance:`** Removed the `setInterval`/`tick` mechanism that re-ran filtering every 1.4 seconds for no reason.
@@ -15,3 +13,19 @@ Review of the existing Task Dashboard and Activity Feed modules, before the refa
 - **`UX Issue:`** Added the same `loading` / `error` pattern already used in `useTasks`, including an empty state ("No activity matches this search.") distinct from the error state, AS previously a failed fetch just silently showed an empty list.
 - **`UX Issue:`** Fixed a bug where every item's timestamp was rendered twice by collapsing `formatTimeA` and `formatTimeB` because they were both called in the JSX.
 - **`UX Issue:`** Aded a visually-hidden `<label>` and a new `.input-label` utility class in `globals.css`, tied to the input via `id`, As input was using placeholder-only tha t disappears after typing, making it not clear for some audience.
+- **`UX Issue:`** Added a new form to create activities, as previously there was no a handler to create one.
+
+## New Features
+
+**`app/activity/page.tsx`** — full rewrite of the same page, same functionality, much simpler:
+
+- Added a small "Log it" form (action + optional info) above the search bar, using the same
+  loading/error pattern as the rest of the page.
+
+**`lib/backendApi.ts`**
+
+- Added `createActivityInBackend(action, info?)`.
+
+**`app/api/activity/route.ts`**
+
+- Added `POST`, to communicate with the backend's existing `POST /activity`.

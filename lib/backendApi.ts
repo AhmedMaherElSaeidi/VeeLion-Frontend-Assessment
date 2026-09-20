@@ -70,3 +70,24 @@ export async function getActivityFromBackend(): Promise<ActivityLog[]> {
     throw new Error(error instanceof Error ? error.message : "Failed to load activity logs.");
   }
 }
+
+export async function createActivityInBackend(action: string, info?: string): Promise<ActivityLog> {
+  try {
+    const response = await fetch(buildBackendUrl("/activity"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(info ? { action, info } : { action }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseError(response));
+    }
+
+    return (await response.json()) as ActivityLog;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "Failed to create activity entry.");
+  }
+}

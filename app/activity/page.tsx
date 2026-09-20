@@ -26,6 +26,9 @@ export default function ActivityPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionInput, setActionInput] = useState("");
+  const [infoInput, setInfoInput] = useState("");
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,6 +70,38 @@ export default function ActivityPage() {
     [activity, query]
   );
 
+  async function handleCreate(event: React.FormEvent) {
+    event.preventDefault();
+    const action = actionInput.trim();
+    if (!action) {
+      return;
+    }
+
+    try {
+      setCreating(true);
+      setError("");
+
+      const response = await fetch("/api/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, info: infoInput.trim() || undefined }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed with ${response.status}`);
+      }
+
+      const created = (await response.json()) as ActivityLog;
+      setActivity((previous) => [...previous, created]);
+      setActionInput("");
+      setInfoInput("");
+    } catch {
+      setError("Could not add that entry.");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <main className="stack">
       <nav>
@@ -89,6 +124,34 @@ export default function ActivityPage() {
           onChange={(event) => setQuery(event.target.value)}
         />
       </section>
+
+      <form className="card" style={{ padding: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }} onSubmit={handleCreate}>
+        <label htmlFor="activity-action" className="input-label">
+          Action
+        </label>
+        <input
+          id="activity-action"
+          className="input"
+          style={{ flex: "1 1 200px" }}
+          placeholder="What happened? (e.g. reviewed task)"
+          value={actionInput}
+          onChange={(event) => setActionInput(event.target.value)}
+        />
+        <label htmlFor="activity-info" className="input-label">
+          Details
+        </label>
+        <input
+          id="activity-info"
+          className="input"
+          style={{ flex: "1 1 200px" }}
+          placeholder="Details (optional)"
+          value={infoInput}
+          onChange={(event) => setInfoInput(event.target.value)}
+        />
+        <button type="submit" className="button primary" disabled={creating || !actionInput.trim()}>
+          {creating ? "Logging..." : "Log it"}
+        </button>
+      </form>
 
       <section className="card" style={{ padding: "1rem" }}>
         <small style={{ color: "var(--muted)" }}>
