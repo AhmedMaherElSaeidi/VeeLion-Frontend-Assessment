@@ -21,6 +21,10 @@ Review of the existing Task Dashboard and Activity Feed modules, before the refa
 
 - Added a "Log it" form (action + optional info) component, used within **`app/activity/page.tsx`**
 
+**`hooks/useActivity.ts`**
+
+- **`Maintability:`** Handling state management within **`app/activity/page.tsx`** using a hook, same as tasks.
+
 **`lib/backendApi.ts`**
 
 - Added `createActivityInBackend(action, info?)`.

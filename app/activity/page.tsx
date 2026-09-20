@@ -1,95 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import type { ActivityLog } from "@/types/api";
+import { useActivity } from "@/hooks/useActivity";
 import { ActivityCreateForm } from "@/components/activity/ActivityCreateForm";
 
 function formatTime(value: string) {
   return new Date(value).toLocaleString();
 }
 
-function filterActivity(items: ActivityLog[], query: string) {
-  if (!query) {
-    return items;
-  }
-
-  const lower = query.toLowerCase();
-  return items.filter(
-    (item) =>
-      (item.action || "").toLowerCase().includes(lower) ||
-      (item.info || "").toLowerCase().includes(lower)
-  );
-}
-
 export default function ActivityPage() {
-  const [activity, setActivity] = useState<ActivityLog[]>([]);
-  const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadActivity() {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch("/api/activity");
-        if (!response.ok) {
-          throw new Error(`Request failed with ${response.status}`);
-        }
-
-        const data = (await response.json()) as ActivityLog[];
-        if (!cancelled) {
-          setActivity(data || []);
-        }
-      } catch {
-        if (!cancelled) {
-          setError("Could not load activity right now.");
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadActivity();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const filteredActivity = useMemo(
-    () => filterActivity(activity, query),
-    [activity, query]
-  );
-
-  async function handleCreate(action: string, info: string): Promise<boolean> {
-    try {
-      setError("");
-
-      const response = await fetch("/api/activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(info ? { action, info } : { action }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Request failed with ${response.status}`);
-      }
-
-      const created = (await response.json()) as ActivityLog;
-      setActivity((previous) => [...previous, created]);
-      return true;
-    } catch {
-      setError("Could not add that entry.");
-      return false;
-    }
-  }
+  const {
+    activity,
+    filteredActivity,
+    query,
+    setQuery,
+    loading,
+    error,
+    fetchActivity,
+    createActivity,
+  } = useActivity();
 
   return (
     <main className="stack">
@@ -102,7 +31,7 @@ export default function ActivityPage() {
       <section className="card" style={{ padding: "1rem" }}>
         <h1 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Activity Feed</h1>
 
-        <label htmlFor="activity-search" className="input-label">
+        <label htmlFor="activity-search" className="sr-only">
           Search activity
         </label>
         <input
@@ -114,7 +43,7 @@ export default function ActivityPage() {
         />
       </section>
 
-      <ActivityCreateForm onCreate={handleCreate} />
+      <ActivityCreateForm onCreate={createActivity} />
 
       <section className="card" style={{ padding: "1rem" }}>
         <small style={{ color: "var(--muted)" }}>
@@ -133,7 +62,10 @@ export default function ActivityPage() {
           className="card"
           style={{ padding: "1rem", borderColor: "#e3b4c0", background: "#fff8fa" }}
         >
-          <p style={{ margin: 0, color: "var(--danger)" }}>{error}</p>
+          <p style={{ marginTop: 0, marginBottom: "0.75rem", color: "var(--danger)" }}>{error}</p>
+          <button type="button" className="button" onClick={fetchActivity}>
+            Retry
+          </button>
         </section>
       ) : null}
 
