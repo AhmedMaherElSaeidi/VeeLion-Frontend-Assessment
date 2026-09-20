@@ -17,10 +17,9 @@ Review of the existing Task Dashboard and Activity Feed modules, before the refa
 
 ## New Features
 
-**`app/activity/page.tsx`** — full rewrite of the same page, same functionality, much simpler:
+**`components/activity/ActivityCreateForm.tsx`**
 
-- Added a small "Log it" form (action + optional info) above the search bar, using the same
-  loading/error pattern as the rest of the page.
+- Added a "Log it" form (action + optional info) component, used within **`app/activity/page.tsx`**
 
 **`lib/backendApi.ts`**
 
