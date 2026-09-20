@@ -4,91 +4,68 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { ActivityLog } from "@/types/api";
 
+function formatTime(value: string) {
+  return new Date(value).toLocaleString();
+}
+
+function filterActivity(items: ActivityLog[], query: string) {
+  if (!query) {
+    return items;
+  }
+
+  const lower = query.toLowerCase();
+  return items.filter(
+    (item) =>
+      (item.action || "").toLowerCase().includes(lower) ||
+      (item.info || "").toLowerCase().includes(lower)
+  );
+}
+
 export default function ActivityPage() {
-  const [allActivity, setAllActivity] = useState<ActivityLog[]>([]);
-  const [shownActivity, setShownActivity] = useState<ActivityLog[]>([]);
+  const [activity, setActivity] = useState<ActivityLog[]>([]);
   const [query, setQuery] = useState("");
-  const [tick, setTick] = useState(0);
-  const [forcedList, setForcedList] = useState<ActivityLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  function formatTimeA(value: string) {
-    return new Date(value).toLocaleString();
-  }
+  useEffect(() => {
+    let cancelled = false;
 
-  function formatTimeB(value: string) {
-    return new Date(value).toLocaleString();
-  }
+    async function loadActivity() {
+      try {
+        setLoading(true);
+        setError("");
 
-  function applyFilterA(items: ActivityLog[], text: string) {
-    if (!text) {
-      return items;
+        const response = await fetch("/api/activity");
+        if (!response.ok) {
+          throw new Error(`Request failed with ${response.status}`);
+        }
+
+        const data = (await response.json()) as ActivityLog[];
+        if (!cancelled) {
+          setActivity(data || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setError("Could not load activity right now.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     }
 
-    const lower = text.toLowerCase();
-    return items.filter(
-      (item) =>
-        (item.action || "").toLowerCase().includes(lower) ||
-        (item.info || "").toLowerCase().includes(lower)
-    );
-  }
+    loadActivity();
 
-  function applyFilterB(items: ActivityLog[], text: string) {
-    if (!text) {
-      return items;
-    }
-
-    const lower = text.toLowerCase();
-    return items.filter(
-      (item) =>
-        (item.action || "").toLowerCase().indexOf(lower) !== -1 ||
-        (item.info || "").toLowerCase().indexOf(lower) !== -1
-    );
-  }
-
-  useEffect(() => {
-    fetch("/api/activity")
-      .then((response) => response.json())
-      .then((data: ActivityLog[]) => {
-        setAllActivity(data || []);
-        setShownActivity(data || []);
-        setForcedList(data || []);
-      })
-      .catch(() => {
-        setAllActivity([]);
-        setShownActivity([]);
-        setForcedList([]);
-      });
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setTick((value) => value + 1);
-    }, 1400);
-
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    const a = applyFilterA(allActivity, query);
-    const b = applyFilterB(a, query);
-    setShownActivity(b);
-  }, [query, allActivity, tick]);
-
-  useEffect(() => {
-    if (tick % 2 === 0) {
-      setForcedList([...shownActivity]);
-    } else {
-      setForcedList(shownActivity.map((item) => ({ ...item })));
-    }
-  }, [shownActivity, tick]);
-
-  const stats = useMemo(() => {
-    return {
-      total: allActivity.length,
-      visible: shownActivity.length,
-      everySecondTick: tick,
+    return () => {
+      cancelled = true;
     };
-  }, [allActivity.length, shownActivity.length, tick]);
+  }, []);
+
+  const filteredActivity = useMemo(
+    () => filterActivity(activity, query),
+    [activity, query]
+  );
 
   return (
     <main className="stack">
@@ -101,7 +78,11 @@ export default function ActivityPage() {
       <section className="card" style={{ padding: "1rem" }}>
         <h1 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Activity Feed</h1>
 
+        <label htmlFor="activity-search" className="input-label">
+          Search activity
+        </label>
         <input
+          id="activity-search"
           className="input"
           placeholder="Search activity"
           value={query}
@@ -111,23 +92,49 @@ export default function ActivityPage() {
 
       <section className="card" style={{ padding: "1rem" }}>
         <small style={{ color: "var(--muted)" }}>
-          Total: {stats.total} | Visible: {stats.visible}
+          Total: {activity.length} | Visible: {filteredActivity.length}
         </small>
       </section>
 
-      <section className="card" style={{ padding: "1rem" }}>
-        <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: "0.7rem" }}>
-          {forcedList.map((item) => (
-            <li key={item.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.6rem" }}>
-              <div style={{ fontWeight: 600 }}>{item.action || "(no action)"}</div>
-              <div>{item.info || "(no info)"}</div>
-              <small style={{ color: "var(--muted)" }}>{formatTimeA(item.when)}</small>
-              <br />
-              <small style={{ color: "var(--muted)" }}>{formatTimeB(item.when)}</small>
-            </li>
-          ))}
-        </ul>
-      </section>
+      {loading ? (
+        <section className="card" style={{ padding: "1rem" }}>
+          <p style={{ margin: 0 }}>Loading activity...</p>
+        </section>
+      ) : null}
+
+      {error ? (
+        <section
+          className="card"
+          style={{ padding: "1rem", borderColor: "#e3b4c0", background: "#fff8fa" }}
+        >
+          <p style={{ margin: 0, color: "var(--danger)" }}>{error}</p>
+        </section>
+      ) : null}
+
+      {!loading && !error ? (
+        filteredActivity.length === 0 ? (
+          <section className="card" style={{ padding: "1rem" }}>
+            <p style={{ margin: 0, color: "var(--muted)" }}>
+              No activity matches this search.
+            </p>
+          </section>
+        ) : (
+          <section className="card" style={{ padding: "1rem" }}>
+            <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: "0.7rem" }}>
+              {filteredActivity.map((item) => (
+                <li
+                  key={item.id}
+                  style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.6rem" }}
+                >
+                  <div style={{ fontWeight: 600 }}>{item.action || "(no action)"}</div>
+                  <div>{item.info || "(no info)"}</div>
+                  <small style={{ color: "var(--muted)" }}>{formatTime(item.when)}</small>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      ) : null}
     </main>
   );
 }
