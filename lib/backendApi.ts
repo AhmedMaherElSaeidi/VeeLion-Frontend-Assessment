@@ -33,6 +33,28 @@ export async function getTasksFromBackend(): Promise<Task[]> {
   }
 }
 
+export async function createTaskInBackend(title: string): Promise<Task> {
+  try {
+    const response = await fetch(buildBackendUrl("/tasks"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ title }),
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseError(response));
+    }
+
+    const body = (await response.json()) as TaskResponse;
+    return body.data;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "Failed to create task.");
+  }
+}
+
 export async function updateTaskInBackend(taskId: string, completed: boolean): Promise<Task> {
   try {
     const response = await fetch(buildBackendUrl(`/tasks/${taskId}`), {
@@ -52,6 +74,21 @@ export async function updateTaskInBackend(taskId: string, completed: boolean): P
     return body.data;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to update task.");
+  }
+}
+
+export async function deleteTaskInBackend(taskId: string): Promise<void> {
+  try {
+    const response = await fetch(buildBackendUrl(`/tasks/${taskId}`), {
+      method: "DELETE",
+      cache: "no-store",
+    });
+
+    if (!response.ok && response.status !== 204) {
+      throw new Error(await parseError(response));
+    }
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "Failed to delete task.");
   }
 }
 
@@ -89,5 +126,20 @@ export async function createActivityInBackend(action: string, info?: string): Pr
     return (await response.json()) as ActivityLog;
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to create activity entry.");
+  }
+}
+
+export async function deleteActivityInBackend(activityId: string): Promise<void> {
+  try {
+    const response = await fetch(buildBackendUrl(`/activity/${activityId}`), {
+      method: "DELETE",
+      cache: "no-store",
+    });
+
+    if (!response.ok && response.status !== 204) {
+      throw new Error(await parseError(response));
+    }
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "Failed to delete activity entry.");
   }
 }

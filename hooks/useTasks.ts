@@ -29,6 +29,10 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
     }
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return (await response.json()) as T;
 }
 
@@ -38,6 +42,8 @@ export function useTasks() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
   const [updatingTaskId, setUpdatingTaskId] = useState<string>("");
+  const [deletingTaskId, setDeletingTaskId] = useState<string>("");
+  const [creating, setCreating] = useState<boolean>(false);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -53,6 +59,24 @@ export function useTasks() {
       setError(getErrorMessage(error, "Could not load tasks right now."));
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const createTask = useCallback(async (title: string) => {
+    try {
+      setCreating(true);
+      setError("");
+
+      const body = await requestJson<TaskResponse>("/api/tasks", {
+        method: "POST",
+        body: JSON.stringify({ title }),
+      });
+
+      setTasks((previous) => [...previous, body.data]);
+    } catch (error) {
+      setError(getErrorMessage(error, "Could not create that task."));
+    } finally {
+      setCreating(false);
     }
   }, []);
 
@@ -73,6 +97,23 @@ export function useTasks() {
       setError(getErrorMessage(error, "Could not update task status."));
     } finally {
       setUpdatingTaskId("");
+    }
+  }, []);
+
+  const deleteTask = useCallback(async (taskId: string) => {
+    try {
+      setDeletingTaskId(taskId);
+      setError("");
+
+      await requestJson<void>(`/api/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+
+      setTasks((previous) => previous.filter((task) => task.id !== taskId));
+    } catch (error) {
+      setError(getErrorMessage(error, "Could not delete that task."));
+    } finally {
+      setDeletingTaskId("");
     }
   }, []);
 
@@ -99,8 +140,12 @@ export function useTasks() {
     loading,
     error,
     updatingTaskId,
+    deletingTaskId,
+    creating,
     setFilter,
     fetchTasks,
+    createTask,
     updateTaskStatus,
+    deleteTask,
   };
 }

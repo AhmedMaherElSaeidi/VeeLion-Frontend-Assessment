@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { updateTaskInBackend } from "@/lib/backendApi";
+import { deleteTaskInBackend, updateTaskInBackend } from "@/lib/backendApi";
 
 type RouteParams = {
   params: {
@@ -23,6 +23,18 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   } catch (error) {
     return NextResponse.json(
       { error: { message: error instanceof Error ? error.message : "Unable to update task." } },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: Request, { params }: RouteParams) {
+  try {
+    await deleteTaskInBackend(params.id);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: { message: error instanceof Error ? error.message : "Unable to delete task." } },
       { status: 500 }
     );
   }

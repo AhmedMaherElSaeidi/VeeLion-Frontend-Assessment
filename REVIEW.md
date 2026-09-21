@@ -28,7 +28,31 @@ Review of the existing Task Dashboard and Activity Feed modules, before the refa
 **`lib/backendApi.ts`**
 
 - Added `createActivityInBackend(action, info?)`.
+- Added `createTaskInBackend(title)` and `deleteTaskInBackend(taskId)`.
 
 **`app/api/activity/route.ts`**
 
 - Added `POST`, to communicate with the backend's existing `POST /activity`.
+
+**`app/api/tasks/route.ts`**
+
+- Added `POST`, proxying to the backend's existing `POST /tasks`.
+
+**`app/api/tasks/[id]/route.ts`**
+
+- Added `DELETE`, proxying to the backend's existing `DELETE /tasks/:id`.
+
+**`hooks/useTasks.ts`**
+
+- Added `createTask(title)` and `deleteTask(taskId)`, each with their own loading state
+  (`creating`, `deletingTaskId`) following the same pattern as the existing `updatingTaskId`.
+
+**`components/tasks/TaskDashboard.tsx`**
+
+- Wired up delete, with a `window.confirm()` prompt before deleting (no new dependency for a
+  confirmation dialog — kept it plain).
+
+**`components/tasks/TaskItem.tsx` / `TaskList.tsx`**
+
+- Added a "Delete" button next to the existing toggle button, and threaded the new
+  `deletingTaskId`/`onDelete` props through.

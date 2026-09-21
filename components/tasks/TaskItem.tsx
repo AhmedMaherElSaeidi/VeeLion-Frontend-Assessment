@@ -3,10 +3,12 @@ import type { Task } from "@/types/api";
 type TaskItemProps = {
   task: Task;
   busy: boolean;
+  deleting: boolean;
   onToggle: (task: Task) => void;
+  onDelete: (task: Task) => void;
 };
 
-export function TaskItem({ task, busy, onToggle }: TaskItemProps) {
+export function TaskItem({ task, busy, deleting, onToggle, onDelete }: TaskItemProps) {
   return (
     <li
       className="card"
@@ -25,15 +27,25 @@ export function TaskItem({ task, busy, onToggle }: TaskItemProps) {
         Updated: {new Date(task.updatedAt).toLocaleString()}
       </small>
 
-      <div>
+      <div style={{ display: "flex", gap: "0.5rem" }}>
         <button
           type="button"
           className="button"
           onClick={() => onToggle(task)}
-          disabled={busy}
+          disabled={busy || deleting}
           aria-label={`Mark ${task.title} as ${task.completed ? "pending" : "completed"}`}
         >
           {busy ? "Saving..." : task.completed ? "Mark as Pending" : "Mark as Completed"}
+        </button>
+
+        <button
+          type="button"
+          className="button danger-button"
+          onClick={() => onDelete(task)}
+          disabled={busy || deleting}
+          aria-label={`Delete ${task.title}`}
+        >
+          {deleting ? "Deleting..." : "Delete"}
         </button>
       </div>
     </li>

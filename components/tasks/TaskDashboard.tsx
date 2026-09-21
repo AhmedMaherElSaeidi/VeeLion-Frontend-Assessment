@@ -3,6 +3,7 @@
 import { useTasks } from "@/hooks/useTasks";
 import type { Task } from "@/types/api";
 import { StatusFilter } from "@/components/tasks/StatusFilter";
+import { TaskCreateForm } from "@/components/tasks/TaskCreateForm";
 import { TaskList } from "@/components/tasks/TaskList";
 
 export function TaskDashboard() {
@@ -12,13 +13,23 @@ export function TaskDashboard() {
     loading,
     error,
     updatingTaskId,
+    deletingTaskId,
+    creating,
     setFilter,
     fetchTasks,
+    createTask,
     updateTaskStatus,
+    deleteTask,
   } = useTasks();
 
   const handleToggle = (task: Task) => {
     updateTaskStatus(task.id, !task.completed);
+  };
+
+  const handleDelete = (task: Task) => {
+    if (window.confirm(`Delete "${task.title}"? This can't be undone.`)) {
+      deleteTask(task.id);
+    }
   };
 
   return (
@@ -26,6 +37,8 @@ export function TaskDashboard() {
       <header className="card" style={{ padding: "1rem" }}>
         <h1 style={{ marginTop: 0, marginBottom: "0.5rem" }}>Task Dashboard</h1>
       </header>
+
+      <TaskCreateForm onCreate={createTask} creating={creating} />
 
       <StatusFilter value={filter} onChange={setFilter} />
 
@@ -45,7 +58,13 @@ export function TaskDashboard() {
       ) : null}
 
       {!loading && !error ? (
-        <TaskList tasks={filteredTasks} updatingTaskId={updatingTaskId} onToggle={handleToggle} />
+        <TaskList
+          tasks={filteredTasks}
+          updatingTaskId={updatingTaskId}
+          deletingTaskId={deletingTaskId}
+          onToggle={handleToggle}
+          onDelete={handleDelete}
+        />
       ) : null}
     </section>
   );
