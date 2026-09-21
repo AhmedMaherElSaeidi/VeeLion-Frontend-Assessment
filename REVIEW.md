@@ -2,6 +2,14 @@
 
 Review of the existing Task Dashboard and Activity Feed modules, before the refactor applied
 
+## New Files
+
+**`components/activity/ActivityCreateForm.tsx`** - Added a "Log it" form (action + optional info) component.
+**`components/activity/ActivityDashboard.tsx`** - Top-level Activity container; wires `useActivity` to the create form, search, loading/error states, and the list, mirroring `TaskDashboard.tsx`.
+**`components/activity/ActivityList.tsx`** - Renders the activity entries (or an empty state), mirroring `TaskList.tsx`.
+**`components/activity/ActivityItem.tsx`** - A single activity entry with its Delete button, mirroring `TaskItem.tsx`.
+**`app/api/activity/[id]/route.ts`** - Added `DELETE`, proxying to the backend's existing `DELETE /activity/:id`, mirroring `app/api/tasks/[id]/route.ts`.
+
 ## Modified Files
 
 **`app/activity/page.tsx`** — full rewrite of the same page, same functionality, much simpler:
@@ -14,21 +22,20 @@ Review of the existing Task Dashboard and Activity Feed modules, before the refa
 - **`UX Issue:`** Fixed a bug where every item's timestamp was rendered twice by collapsing `formatTimeA` and `formatTimeB` because they were both called in the JSX.
 - **`UX Issue:`** Aded a visually-hidden `<label>` and a new `.input-label` utility class in `globals.css`, tied to the input via `id`, As input was using placeholder-only tha t disappears after typing, making it not clear for some audience.
 - **`UX Issue:`** Added a new form to create activities, as previously there was no a handler to create one.
+- **`Maintability:`** Slimmed the page down to a thin wrapper around a new `ActivityDashboard` component, so `app/activity/page.tsx` matches the shape of `app/tasks/page.tsx` instead of holding all the state and markup itself.
 
 ## New Features
-
-**`components/activity/ActivityCreateForm.tsx`**
-
-- Added a "Log it" form (action + optional info) component, used within **`app/activity/page.tsx`**
 
 **`hooks/useActivity.ts`**
 
 - **`Maintability:`** Handling state management within **`app/activity/page.tsx`** using a hook, same as tasks.
+- Added `deletingActivityId` state and `deleteActivity(activityId)`, following the same pattern as `deleteTask` in `useTasks`.
 
 **`lib/backendApi.ts`**
 
 - Added `createActivityInBackend(action, info?)`.
 - Added `createTaskInBackend(title)` and `deleteTaskInBackend(taskId)`.
+- `deleteActivityInBackend(activityId)` already existed but was unused; it's now wired up through the new `app/api/activity/[id]/route.ts`.
 
 **`app/api/activity/route.ts`**
 

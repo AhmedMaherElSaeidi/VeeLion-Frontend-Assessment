@@ -21,6 +21,7 @@ export function useActivity() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
+  const [deletingActivityId, setDeletingActivityId] = useState<string>("");
 
   const fetchActivity = useCallback(async () => {
     try {
@@ -64,6 +65,27 @@ export function useActivity() {
     }
   }, []);
 
+  const deleteActivity = useCallback(async (activityId: string) => {
+    try {
+      setDeletingActivityId(activityId);
+      setError("");
+
+      const response = await fetch(`/api/activity/${activityId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok && response.status !== 204) {
+        throw new Error(`Request failed with ${response.status}`);
+      }
+
+      setActivity((previous) => previous.filter((item) => item.id !== activityId));
+    } catch {
+      setError("Could not delete that entry.");
+    } finally {
+      setDeletingActivityId("");
+    }
+  }, []);
+
   useEffect(() => {
     fetchActivity();
   }, [fetchActivity]);
@@ -77,7 +99,9 @@ export function useActivity() {
     setQuery,
     loading,
     error,
+    deletingActivityId,
     fetchActivity,
     createActivity,
+    deleteActivity,
   };
 }
