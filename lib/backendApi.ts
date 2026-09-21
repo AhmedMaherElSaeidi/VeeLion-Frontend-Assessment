@@ -1,5 +1,12 @@
 import { BACKEND_BASE_URL } from "@/lib/constants";
-import type { ActivityLog, ErrorResponse, Task, TaskResponse, TasksResponse } from "@/types/api";
+import type {
+  ActivityLog,
+  ErrorResponse,
+  Task,
+  TaskResponse,
+  TasksResponse,
+  TasksSummary,
+} from "@/types/api";
 
 function buildBackendUrl(path: string): string {
   return `${BACKEND_BASE_URL}${path}`;
@@ -141,5 +148,40 @@ export async function deleteActivityInBackend(activityId: string): Promise<void>
     }
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Failed to delete activity entry.");
+  }
+}
+
+export type ReportsWindowParams = {
+  hours?: string;
+  minutes?: string;
+  seconds?: string;
+};
+
+export async function getReportsSummaryFromBackend(
+  window?: ReportsWindowParams,
+): Promise<TasksSummary> {
+  try {
+    const params = new URLSearchParams();
+
+    if (window?.hours !== undefined && window.hours !== "") params.set("hours", window.hours);
+    if (window?.minutes !== undefined && window.minutes !== "")
+      params.set("minutes", window.minutes);
+    if (window?.seconds !== undefined && window.seconds !== "")
+      params.set("seconds", window.seconds);
+
+    const query = params.toString();
+    const path = query ? `/reports/tasks-summary?${query}` : "/reports/tasks-summary";
+
+    const response = await fetch(buildBackendUrl(path), {
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(await parseError(response));
+    }
+
+    return (await response.json()) as TasksSummary;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : "Failed to load the tasks summary.");
   }
 }
