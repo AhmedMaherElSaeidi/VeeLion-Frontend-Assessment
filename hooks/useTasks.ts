@@ -56,7 +56,7 @@ export function useTasks() {
 
       setTasks(body.data);
     } catch (error) {
-      setError(getErrorMessage(error, "Could not load tasks right now."));
+      setError("Could not load tasks right now.");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export function useTasks() {
 
       setTasks((previous) => [...previous, body.data]);
     } catch (error) {
-      setError(getErrorMessage(error, "Could not create that task."));
+      setError("Could not create that task.");
     } finally {
       setCreating(false);
     }
@@ -94,7 +94,7 @@ export function useTasks() {
         previous.map((task) => (task.id === taskId ? body.data : task))
       );
     } catch (error) {
-      setError(getErrorMessage(error, "Could not update task status."));
+      setError("Could not update task status.");
     } finally {
       setUpdatingTaskId("");
     }
@@ -111,7 +111,7 @@ export function useTasks() {
 
       setTasks((previous) => previous.filter((task) => task.id !== taskId));
     } catch (error) {
-      setError(getErrorMessage(error, "Could not delete that task."));
+      setError("Could not delete that task.");
     } finally {
       setDeletingTaskId("");
     }

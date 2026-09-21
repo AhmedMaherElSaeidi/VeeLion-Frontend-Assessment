@@ -44,7 +44,7 @@ export function useReports() {
       setSummary(data);
       setAppliedWindow(nextWindow ?? {});
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not load the tasks summary right now.");
+      setError("Could not load the tasks summary right now.");
     } finally {
       setLoading(false);
     }
